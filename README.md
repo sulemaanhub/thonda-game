@@ -1,1 +1,256 @@
 # thonda-game
+<!DOCTYPE html>
+<html>
+<head>
+<title>Super Mario Full Game</title>
+
+<style>
+body{
+margin:0;
+overflow:hidden;
+background:linear-gradient(skyblue,white);
+font-family:Arial;
+}
+
+/* PLAYER */
+#player{
+width:60px;
+height:60px;
+position:absolute;
+bottom:80px;
+left:100px;
+background:url src="thonda.jpeg";
+background-size:cover;
+background-position:center;
+border-radius:10px;
+}
+
+/* GROUND */
+.ground{
+position:absolute;
+bottom:0;
+width:100%;
+height:80px;
+background:green;
+}
+
+/* COINS */
+.coin{
+width:25px;
+height:25px;
+background:gold;
+border-radius:50%;
+position:absolute;
+}
+
+/* OBSTACLE */
+.obstacle{
+width:50px;
+height:60px;
+background:brown;
+position:absolute;
+bottom:80px;
+}
+
+/* SCORE */
+#score{
+position:absolute;
+top:20px;
+left:20px;
+font-size:22px;
+font-weight:bold;
+}
+
+/* BUTTON */
+#startBtn{
+position:absolute;
+top:40%;
+left:45%;
+padding:15px 30px;
+font-size:20px;
+cursor:pointer;
+}
+
+#upload{
+position:absolute;
+top:10px;
+right:20px;
+}
+</style>
+</head>
+<body>
+
+<input type="file" id="upload">
+
+<button id="startBtn">Start Game</button>
+
+<div id="score">Score: 0</div>
+<div id="player"></div>
+<div class="ground"></div>
+
+<!-- AUDIO -->
+<audio id="bgMusic" loop>
+<source src="C:\Users\Intel\Documents\Custom Office Templates\dhoom aiudo.mpeg"type="audio/mpeg">
+</audio>
+
+<audio id="jumpSound">
+<source src="C:\Users\Intel\Documents\Custom Office Templates\jump sound.mpeg" type="audio/mpeg">
+</audio>
+
+<audio id="coinSound">
+<source src="C:\Users\Intel\Documents\Custom Office Templates\fahh.mpeg" type="audio/mpeg">
+</audio>
+
+<script>
+
+let player = document.getElementById("player");
+let scoreText = document.getElementById("score");
+let startBtn = document.getElementById("startBtn");
+let upload = document.getElementById("upload");
+
+let bgMusic = document.getElementById("bgMusic");
+let jumpSound = document.getElementById("jumpSound");
+let coinSound = document.getElementById("coinSound");
+
+/* UPLOAD CHARACTER IMAGE */
+upload.addEventListener("change", function(){
+let file = this.files[0];
+let reader = new FileReader();
+reader.onload = function(){
+player.style.background = "url('" + reader.result + "')";
+player.style.backgroundSize = "cover";
+}
+reader.readAsDataURL(file);
+});
+
+/* GAME VARIABLES */
+let velocity = 0;
+let gravity = 0.8;
+let playerBottom = 80;
+let playerLeft = 100;
+
+let keys = {};
+let jumpCount = 0;
+let maxJump = 2;
+let score = 0;
+let gameStarted = false;
+
+/* START GAME */
+startBtn.onclick = function(){
+bgMusic.volume = 0.4;
+bgMusic.play().catch(()=>{});
+startBtn.style.display="none";
+gameStarted = true;
+spawnCoin();
+spawnObstacle();
+gameLoop();
+};
+
+/* KEY CONTROLS */
+document.addEventListener("keydown",(e)=>{
+keys[e.key]=true;
+
+if(e.code==="Space" && jumpCount<maxJump){
+velocity=15;
+jumpCount++;
+jumpSound.currentTime=0;
+jumpSound.play();
+}
+});
+
+document.addEventListener("keyup",(e)=>{
+keys[e.key]=false;
+});
+
+/* SPAWN COINS */
+function spawnCoin(){
+let coin=document.createElement("div");
+coin.className="coin";
+coin.style.left=window.innerWidth+"px";
+coin.style.bottom=Math.random()*300+120+"px";
+document.body.appendChild(coin);
+
+let move=setInterval(()=>{
+let left=parseInt(coin.style.left);
+coin.style.left=left-5+"px";
+
+if(isCollide(player,coin)){
+coinSound.currentTime=0;
+coinSound.play();
+score+=10;
+scoreText.innerText="Score: "+score;
+coin.remove();
+clearInterval(move);
+}
+
+if(left<0){
+coin.remove();
+clearInterval(move);
+}
+},20);
+
+setTimeout(spawnCoin,2000);
+}
+
+/* SPAWN OBSTACLES */
+function spawnObstacle(){
+let obs=document.createElement("div");
+obs.className="obstacle";
+obs.style.left=window.innerWidth+"px";
+document.body.appendChild(obs);
+
+let move=setInterval(()=>{
+let left=parseInt(obs.style.left);
+obs.style.left=left-6+"px";
+
+if(isCollide(player,obs)){
+bgMusic.pause();
+alert("Game Over! Score: "+score);
+location.reload();
+}
+
+if(left<0){
+obs.remove();
+clearInterval(move);
+}
+},20);
+
+setTimeout(spawnObstacle,3000);
+}
+
+/* COLLISION */
+function isCollide(a,b){
+let r1=a.getBoundingClientRect();
+let r2=b.getBoundingClientRect();
+return !(r1.top>r2.bottom||
+r1.bottom<r2.top||
+r1.right<r2.left||
+r1.left>r2.right);
+}
+
+/* GAME LOOP */
+function gameLoop(){
+
+if(!gameStarted) return;
+
+if(keys["ArrowRight"]) playerLeft+=6;
+if(keys["ArrowLeft"]) playerLeft-=6;
+
+velocity-=gravity;
+playerBottom+=velocity;
+
+if(playerBottom<=80){
+playerBottom=80;
+velocity=0;
+jumpCount=0;
+}
+
+player.style.bottom=playerBottom+"px";
+player.style.left=playerLeft+"px";
+
+requestAnimationFrame(gameLoop);
+}
+
+</script>
+</body>
+</html>
